@@ -3,30 +3,29 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;  // 👈 await the Promise
+
     const profile = await prisma.profile.findUnique({
-      where: { slug: params.slug },
+      where: { slug },
       include: { user: { select: { name: true, image: true, email: true } } },
     });
 
     if (!profile) {
-      return new NextResponse(
-        JSON.stringify({ error: "Profile not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
+      return NextResponse.json(
+        { error: "Profile not found" },
+        { status: 404 }
       );
     }
 
-    return new NextResponse(
-      JSON.stringify({ profile }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    return NextResponse.json({ profile }, { status: 200 });
   } catch (err) {
     console.error("Public profile API error:", err);
-    return new NextResponse(
-      JSON.stringify({ error: "Server error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
     );
   }
 }
